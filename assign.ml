@@ -1,40 +1,45 @@
 open Printf
 
-(*This function takes the filename as input and returns the contents of the file*)
-let read_file_contents filename =
-  let channel = open_in filename in
-  let file_contents =
-    try
-      let rec read_lines acc =
-        let line = input_line channel in
+(* This function takes the filename as input and returns the contents of the file *)
+let read_from_file filename =
+  try
+    let ic = open_in filename in
+    let rec read_lines acc =
+      try
+        let line = input_line ic in
         read_lines (line :: acc)
-      in
-      let lines = read_lines [] in
-      String.concat "\n" (List.rev lines)
-    with End_of_file ->
-      close_in channel;
-      ""
-  in
-  file_contents
-
+      with End_of_file ->
+        close_in ic;
+        List.rev acc
+    in
+    read_lines []
+  with Sys_error msg ->
+    printf "Error: %s\n" msg;
+    []
 
 let () =
-  print_endline "Choos input method";
-  print_endline "1. For input from file";
-  print_endline "2. For input from command line";
-  print_endline "->";
-  let choice : string = read_line () in
+  print_endline "Choose input method:";
+  print_endline "1. From file";
+  print_endline "2. From command line";
+  print_string "> ";
+  let choice = read_line () in
   if choice = "1" then (
     print_endline "Enter the filename:";
-    let filename : string = read_line () in
-    let text : string = read_file_contents filename in
-    printf "This is your input:\n%s" text
+    print_string "> ";
+    let filename = read_line () in
+    let lines = read_from_file filename in
+    List.iter print_endline lines
   )
   else if choice = "2" then (
-    print_endline "Enter the text here:";
-    let text : string = read_line () in
-    printf "This is your input:\n%s" text
+    print_endline "Enter your text (press Enter twice to finish):";
+    let rec read_lines acc =
+      let line = read_line () in
+      if line = "" then List.rev acc
+      else read_lines (line :: acc)
+    in
+    let lines = read_lines [] in
+    List.iter print_endline lines
   )
   else (
-    print_endline "Invalid input"
+    print_endline "Invalid choice"
   )
